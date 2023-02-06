@@ -10,15 +10,17 @@ fetch('http://192.168.0.199/Modules/online_aiken/print/users.php', { cache: 'no-
     );
 
     const checkboxes = document.querySelectorAll('input[name="user"]')
-    let selectedUsers = []
+    let selectedUsers;
     if (localStorage.getItem('remembered')) {
         selectedUsers = JSON.parse(localStorage.getItem('remembered'))
     }
-    
     for (const user of selectedUsers) {
         document.getElementById(`${user}`).checked = true
     }
-
+    //send at init
+    ipcRenderer.send('message-users', selectedUsers)
+    
+    //update users array on change
     for (const checkbox of checkboxes) {
         checkbox.addEventListener('change', function () {
             if (this.checked) {
@@ -40,7 +42,8 @@ fetch('http://192.168.0.199/Modules/online_aiken/print/users.php', { cache: 'no-
 
 ipcRenderer.on('printers', (event, array) => {
     array.forEach((printer, index, array) => {
-        let check = document.querySelector(`#${(printer['displayName']).replace(/[^\w\s]|\d/gi, '').replace(/\s+/g, '_').trim()} span`);
+        let check = document.querySelector(`#${(printer['displayName']).replace(/[^\w\s-]|\d/gi, '').replace(/\s+/g, ' ').trim()} span`);
+        console.log(`#${(printer['displayName']).replace(/[^\w\s-]|\d/gi, '').replace(/\s+/g, ' ').trim()} span`);
         if (check) {
             check.innerHTML = "✔";
         }

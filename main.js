@@ -10,8 +10,6 @@ const printerName = 'DefaultLabel';
 const printerGradeA = 'PrinterGradeA';
 const printerGradeAminus = 'PrinterGradeA-';
 const printerGradeB = 'PrinterGradeB';
-// const printerGradeAminus = 'PrinterGradeA';
-// const printerGradeB = 'PrinterGradeA';
 
 const createWindow = () => {
     const win = new BrowserWindow({
@@ -106,6 +104,7 @@ app.whenReady().then(() => {
                                                                 to_printer = printerGradeAminus
                                                                 break
                                                             case 'B':
+                                                            case 'C':
                                                                 to_printer = printerGradeB
                                                                 break
                                                         }

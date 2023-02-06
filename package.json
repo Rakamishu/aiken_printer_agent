@@ -4,10 +4,10 @@
   "description": "Prints labels from Aiken",
   "main": "main.js",
   "scripts": {
-    "_start": "electron .",
-    "start": "electron-forge start",
-    "package": "electron-forge package",
-    "make": "electron-forge make"
+    "start": "electron .",
+    "_start": "electron-forge start",
+    "_package": "electron-forge package",
+    "_make": "electron-forge make"
   },
   "author": "Mihail Kolishev",
   "license": "ISC",
