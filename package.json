@@ -1,0 +1,33 @@
+{
+  "name": "OnlineAikenPrinterAgentv2",
+  "version": "2.0.1",
+  "description": "Prints labels from Aiken",
+  "main": "main.js",
+  "scripts": {
+    "_start": "electron .",
+    "start": "electron-forge start",
+    "package": "electron-forge package",
+    "make": "electron-forge make"
+  },
+  "author": "Mihail Kolishev",
+  "license": "ISC",
+  "devDependencies": {
+    "@electron-forge/cli": "^6.0.4",
+    "@electron-forge/maker-deb": "^6.0.4",
+    "@electron-forge/maker-rpm": "^6.0.4",
+    "@electron-forge/maker-squirrel": "^6.0.4",
+    "@electron-forge/maker-zip": "^6.0.4",
+    "electron": "^22.1.0",
+    "electron-rebuild": "^3.2.9"
+  },
+  "dependencies": {
+    "electron-debug": "^3.2.0",
+    "electron-squirrel-startup": "^1.0.0",
+    "node-fetch": "^2.6.9",
+    "request": "^2.88.2"
+  },
+  "nsis": {
+    "allowToChangeInstallationDirectory": true,
+    "oneClick": false
+  }
+}
