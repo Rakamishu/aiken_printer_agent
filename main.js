@@ -22,7 +22,7 @@ const createWindow = () => {
             contextIsolation: false,
             plugins: true,
         },
-        icon: path.join(__dirname, "icon.png")
+        icon: path.join(__dirname, "imgs/icon.png")
     });
     win.loadFile('index.html');
     win.webContents.on('did-finish-load', () => {
