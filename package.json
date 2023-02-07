@@ -25,9 +25,5 @@
     "electron-squirrel-startup": "^1.0.0",
     "node-fetch": "^2.6.9",
     "request": "^2.88.2"
-  },
-  "nsis": {
-    "allowToChangeInstallationDirectory": true,
-    "oneClick": false
   }
 }
