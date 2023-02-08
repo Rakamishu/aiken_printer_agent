@@ -1,20 +1,27 @@
 const { app, BrowserWindow, ipcMain } = require('electron')
-// require('electron-debug')({ showDevTools: true });
+// require('electron-debug')({ showDevTools: true })
 const fetch = require('node-fetch')
 const path = require("path")
-const fs = require('fs');
-const request = require('request');
-const { exec } = require('child_process');
+const fs = require('fs')
+const request = require('request')
+const { exec } = require('child_process')
 
-const printerName = 'DefaultLabel';
-const printerGradeA = 'PrinterGradeA';
-const printerGradeAminus = 'PrinterGradeA-';
-const printerGradeB = 'PrinterGradeB';
+let printerDefault = ''
+let printerGradeA = ''
+let printerGradeAm = ''
+let printerGradeB = ''
 
 const createWindow = () => {
     const win = new BrowserWindow({
         width: 500,
-        height: 570,
+        height: 580,
+        transparent: true,
+        titleBarStyle: 'hidden',
+        titleBarOverlay: {
+            color: '#145383',
+            symbolColor: '#74b1be',
+            height: 1
+        },
         webPreferences: {
             backgroundThrottling: false,
             preload: path.join(__dirname, "preload.js"),
@@ -27,20 +34,24 @@ const createWindow = () => {
     win.loadFile('index.html');
     win.webContents.on('did-finish-load', () => {
         win.webContents.getPrintersAsync().then((printers) => {
-            win.webContents.send('printers', printers);
+            win.webContents.send('printers', printers)
         });
     });
-    win.setMenuBarVisibility(false);
+    win.setMenuBarVisibility(false)
 };
 
 app.whenReady().then(() => {
 
     //get sumatra exe location
-    const sumatrapdf = path.join(__dirname, 'SumatraPDF/SumatraPDF-3.4.6-64.exe');
+    const sumatrapdf = path.join(__dirname, 'SumatraPDF/SumatraPDF-3.4.6-64.exe')
     //define empty array
     let users = [];
     //receive selected users from index.html
-    ipcMain.on('message-users', (event, arg) => { users = arg; }) 
+    ipcMain.on('users', (event, arg)  => { users = arg; }) 
+    ipcMain.on('printerDefault', (event, arg) => { printerDefault = arg; })
+    ipcMain.on('printerGradeA', (event, arg)  => { printerGradeA = arg; })
+    ipcMain.on('printerGradeAm', (event, arg) => { printerGradeAm = arg; })
+    ipcMain.on('printerGradeB', (event, arg)  => { printerGradeB = arg; })
     
     fetch("http://192.168.0.199/Modules/online_aiken/print/last_unitid.php", { cache: 'no-cache' }).then(function (response) {
         return response.text();
@@ -49,9 +60,10 @@ app.whenReady().then(() => {
 
         //maintains the loop by executing itself if nothing to print
         setTimeout(async function listener() {
-            if (users.length > 0) {
-                console.log(users); //debug
-                let exit = false; //if false -> keep looping
+
+            if (users.length > 0 && printerDefault != '') {
+                console.log(users) //debug
+                let exit = false //if false -> keep looping
 
                 //async loop through all selected users
                 for (i = 0; i < users.length; i++) {
@@ -60,40 +72,43 @@ app.whenReady().then(() => {
                         .then(res => res.json())
                         .then(json => {
                             if (json.response && json.response != 'null') { //found something to print
-                                console.log(json, '\n-----------'); //debug
-                                console.log('found. print'); //debug
+                                console.log(json, '\n-----------') //debug
+                                console.log('found. print') //debug
 
                                 //download the file
-                                const fileUrl = `http://192.168.0.199/Modules/online_aiken/print/templates/${json.next_for_print_format}.php?uid=${json.UnitID}&register=1`; 
-                                const localFile = './label.pdf';
+                                const fileUrl = `http://192.168.0.199/Modules/online_aiken/print/templates/${json.next_for_print_format}.php?uid=${json.UnitID}&register=1`
+                                const localFile = './label.pdf'
 
-                                let small_label = false;
-                                if (json.next_for_print_format == "laptops") small_label = true;
+                                let small_label = false
+                                if (json.next_for_print_format == "laptops" &&
+                                    (printerGradeA != '' || printerGradeAm != '' || printerGradeB != '')) {
+                                    small_label = true
+                                }
 
-                                const streamLabel = fs.createWriteStream(localFile);
+                                const streamLabel = fs.createWriteStream(localFile)
                                 request(fileUrl)
                                     .pipe(streamLabel)
                                     .on('finish', async () => {  //download complete. proceed to print
-                                        streamLabel.close();
+                                        streamLabel.close()
 
-                                        exec(`start ${sumatrapdf} -print-to "${printerName}" "${localFile}"`, (error, stdout, stderr) => {
+                                        exec(`start ${sumatrapdf} -print-to "${printerDefault}" "${localFile}"`, (error, stdout, stderr) => {
                                             if (error) {
-                                                console.error(`Error: ${error}`)
+                                                console.error(`Error: ${error}`) //debug
                                                 return
                                             }
-                                            console.log('print successful');
+                                            console.log('print successful') //debug
 
                                             if (!small_label) {
                                                 setTimeout(listener, 3000);
                                             } else {
                                                 //download the file
-                                                const fileUrl_small = `http://192.168.0.199/Modules/online_aiken/print/templates/sn2barcode.php?uid=${json.UnitID}`;
-                                                const localFile_small = './label_small.pdf';
-                                                const streamLabel_small = fs.createWriteStream(localFile_small);
+                                                const fileUrl_small = `http://192.168.0.199/Modules/online_aiken/print/templates/sn2barcode.php?uid=${json.UnitID}`
+                                                const localFile_small = './label_small.pdf'
+                                                const streamLabel_small = fs.createWriteStream(localFile_small)
                                                 request(fileUrl_small)
                                                     .pipe(streamLabel_small)
                                                     .on('finish', async () => {  //download complete. proceed to print
-                                                        streamLabel_small.close();
+                                                        streamLabel_small.close()
 
                                                         let to_printer = printerGradeA
                                                         switch (json.product_grade) {
@@ -101,7 +116,7 @@ app.whenReady().then(() => {
                                                                 to_printer = printerGradeA
                                                                 break
                                                             case 'A-':
-                                                                to_printer = printerGradeAminus
+                                                                to_printer = printerGradeAm
                                                                 break
                                                             case 'B':
                                                             case 'C':
@@ -111,11 +126,11 @@ app.whenReady().then(() => {
 
                                                         exec(`start ${sumatrapdf} -print-to "${to_printer}" -print-settings "landscape" "${localFile_small}"`, (error, stdout, stderr) => {
                                                             if (error) {
-                                                                console.error(`Error: ${error}`)
+                                                                console.error(`Error: ${error}`) //debug
                                                                 return
                                                             }
-                                                            console.log('print small successful');
-                                                            setTimeout(listener, 3000);
+                                                            console.log('print small successful')
+                                                            setTimeout(listener, 3000)
                                                         });
                                                     });
                                             }
@@ -124,18 +139,18 @@ app.whenReady().then(() => {
                                 
                                 //pause the loop and let it be started again on successful print. 
                                 exit = true
-                                return false
+                                return
                             }
                         })
-                        .catch(error => console.error(error));
+                        .catch(error => console.error(error))
                 
-                    if (exit) return false;                    
+                    if (exit) return           
                 }
             }
-            setTimeout(listener, 3000);
-        }, 3000);
+            setTimeout(listener, 3000)
+        }, 3000)
     });
     
-    createWindow();
+    createWindow()
 });
   

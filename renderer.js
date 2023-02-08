@@ -1,5 +1,20 @@
 const { ipcRenderer } = require('electron');
 
+
+let windowTopBar = document.createElement('div')
+    windowTopBar.style.width = "100%"
+    windowTopBar.style.height = "32px"
+    windowTopBar.style.backgroundColor = "transparent"
+    windowTopBar.style.position = "absolute"
+    windowTopBar.style.top = windowTopBar.style.left = 0
+    windowTopBar.style.webkitAppRegion = "drag"
+    document.body.appendChild(windowTopBar)
+
+const printerDefault = document.getElementById('printerDefault');
+const printerGradeA  = document.getElementById('printerGradeA');
+const printerGradeAm = document.getElementById('printerGradeAm');
+const printerGradeB  = document.getElementById('printerGradeB');
+
 fetch('http://192.168.0.199/Modules/online_aiken/print/users.php', { cache: 'no-cache' }).then(function (response) {
 	return response.text();
 }).then(function (html) {
@@ -13,12 +28,15 @@ fetch('http://192.168.0.199/Modules/online_aiken/print/users.php', { cache: 'no-
     let selectedUsers;
     if (localStorage.getItem('remembered')) {
         selectedUsers = JSON.parse(localStorage.getItem('remembered'))
+    } else {
+        selectedUsers = [];
     }
+
     for (const user of selectedUsers) {
         document.getElementById(`${user}`).checked = true
     }
     //send at init
-    ipcRenderer.send('message-users', selectedUsers)
+    ipcRenderer.send('users', selectedUsers)
     
     //update users array on change
     for (const checkbox of checkboxes) {
@@ -31,7 +49,7 @@ fetch('http://192.168.0.199/Modules/online_aiken/print/users.php', { cache: 'no-
             localStorage.setItem('remembered', '')
             localStorage.setItem('remembered', JSON.stringify(selectedUsers))
 
-            ipcRenderer.send('message-users', selectedUsers)
+            ipcRenderer.send('users', selectedUsers)
         });
     }
     
@@ -41,11 +59,39 @@ fetch('http://192.168.0.199/Modules/online_aiken/print/users.php', { cache: 'no-
 
 
 ipcRenderer.on('printers', (event, array) => {
-    array.forEach((printer, index, array) => {
-        let check = document.querySelector(`#${(printer['displayName']).replace(/[^\w\s-]|\d/gi, '').replace(/\s+/g, ' ').trim()} span`);
-        console.log(`#${(printer['displayName']).replace(/[^\w\s-]|\d/gi, '').replace(/\s+/g, ' ').trim()} span`);
-        if (check) {
-            check.innerHTML = "✔";
-        }
+    let printers;
+    if (localStorage.getItem('printers')) {
+        printers = JSON.parse(localStorage.getItem('printers'))
+    }
+    array.forEach((element, key) => {
+        printerDefault.innerHTML = printerDefault.innerHTML + `<option value="${element['displayName']}">${element['displayName']}</option>`
+        printerGradeA.innerHTML  = printerGradeA.innerHTML  + `<option value="${element['displayName']}">${element['displayName']}</option>`
+        printerGradeAm.innerHTML = printerGradeAm.innerHTML + `<option value="${element['displayName']}">${element['displayName']}</option>`
+        printerGradeB.innerHTML  = printerGradeB.innerHTML  + `<option value="${element['displayName']}">${element['displayName']}</option>`
     });
+
+    let dropdowns = document.querySelectorAll('select');
+    for (let i = 0; i < dropdowns.length; i++) {
+        dropdowns[i].addEventListener('change', function () {
+            ipcRenderer.send(this.name, this.value)
+            localStorage.setItem(this.name, this.value);
+        });
+    }
+
+    if (localStorage.getItem('printerDefault')) {
+        document.getElementById('printerDefault').value = localStorage.getItem('printerDefault');
+        ipcRenderer.send('printerDefault', localStorage.getItem('printerDefault'))
+    }
+    if (localStorage.getItem('printerGradeA')) {
+        document.getElementById('printerGradeA').value = localStorage.getItem('printerGradeA');
+        ipcRenderer.send('printerGradeA', localStorage.getItem('printerGradeA'))
+    }
+    if (localStorage.getItem('printerGradeAm')) {
+        document.getElementById('printerGradeAm').value = localStorage.getItem('printerGradeAm');
+        ipcRenderer.send('printerGradeAm', localStorage.getItem('printerGradeAm'))
+    }
+    if (localStorage.getItem('printerGradeB')) {
+        document.getElementById('printerGradeB').value = localStorage.getItem('printerGradeB');
+        ipcRenderer.send('printerGradeB', localStorage.getItem('printerGradeB'))
+    }
 });
