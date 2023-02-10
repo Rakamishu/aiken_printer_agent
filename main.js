@@ -1,5 +1,5 @@
 const { app, BrowserWindow, ipcMain } = require('electron')
-// require('electron-debug')({ showDevTools: true })
+require('electron-debug')({ showDevTools: true })
 const fetch = require('node-fetch')
 const path = require("path")
 const fs = require('fs')
@@ -10,6 +10,7 @@ let printerDefault = ''
 let printerGradeA = ''
 let printerGradeAm = ''
 let printerGradeB = ''
+let printerDefaultOrientation = ''
 
 const createWindow = () => {
     const win = new BrowserWindow({
@@ -47,11 +48,12 @@ app.whenReady().then(() => {
     //define empty array
     let users = [];
     //receive selected users from index.html
-    ipcMain.on('users', (event, arg)  => { users = arg; }) 
-    ipcMain.on('printerDefault', (event, arg) => { printerDefault = arg; })
-    ipcMain.on('printerGradeA', (event, arg)  => { printerGradeA = arg; })
-    ipcMain.on('printerGradeAm', (event, arg) => { printerGradeAm = arg; })
-    ipcMain.on('printerGradeB', (event, arg)  => { printerGradeB = arg; })
+    ipcMain.on('users', (event, arg)                      => { users = arg; }) 
+    ipcMain.on('printerDefault', (event, arg)             => { printerDefault = arg; })
+    ipcMain.on('printerGradeA', (event, arg)              => { printerGradeA = arg; })
+    ipcMain.on('printerGradeAm', (event, arg)             => { printerGradeAm = arg; })
+    ipcMain.on('printerGradeB', (event, arg)              => { printerGradeB = arg; })
+    ipcMain.on('printerDefaultOrientation', (event, arg)  => { printerDefaultOrientation = arg; })
     
     fetch("http://192.168.0.199/Modules/online_aiken/print/last_unitid.php", { cache: 'no-cache' }).then(function (response) {
         return response.text();
@@ -91,7 +93,7 @@ app.whenReady().then(() => {
                                     .on('finish', async () => {  //download complete. proceed to print
                                         streamLabel.close()
 
-                                        exec(`start ${sumatrapdf} -print-to "${printerDefault}" "${localFile}"`, (error, stdout, stderr) => {
+                                        exec(`start ${sumatrapdf} -print-to "${printerDefault}" -print-settings "${printerDefaultOrientation}" "${localFile}"`, (error, stdout, stderr) => {
                                             if (error) {
                                                 console.error(`Error: ${error}`) //debug
                                                 return
